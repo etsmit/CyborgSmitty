@@ -1,0 +1,27 @@
+CyborgSmitty:
+
+A python discord bot written to DnD-style bully a certain member of a certain server.
+Written by etsmit
+
+Req's:
+Python 3.7.9
+discord.py 1.6.0
+
+
+Users can type !attac to roll a d20. If the roll beats or matches the target's AC, a damage roll of 4d6+10 is done.
+If the target reaches 0 health, the bot switches out discord roles and forbids the target from sending messages.
+==========================
+
+Command : Function
+
+attac : attack bumpkin 
+!raidstatus : status update
+!hello : hello world
+!CyborgHalp : this help message
+==Admin commands==
+!howdoyouturnthison : Revive bumpkin, clear people to attac again
+!bumphealth : set bumpkin's max health (default 400)
+!bumpAC : set bumpkin's AC (default 2)
+!bumpkill : kill bumpkin
+!clearattacs : clear all peeps to attac again
+
