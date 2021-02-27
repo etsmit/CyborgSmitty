@@ -247,6 +247,10 @@ async def on_message(message):
                     print('extra dmg for bumpkin')
                     bumpkindmg = dmg_roll_bump()
                     dmg += bumpkindmg
+                if message.author.name == 'Xanxus85':
+                    print('yes')
+                    xancrit = dmg_roll_crit()
+                    dmg += xancrit
                 if (np.random.randint(1,high=2001)==1):
                     print('super roll')
                     dmg += dmg_roll_super()
