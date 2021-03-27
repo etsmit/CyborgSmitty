@@ -40,7 +40,7 @@ client = discord.Client(intents=intents)
 attacked_userlist=[]
 attacked_usertwice=[]
 
-bot_admin_userlist = ['ETHEN_Smitty#4102','TheTowerKnight#6883','Spooky Shoryu#8161','Yuzzie#9469','a_gamer_in_pink#1312','Crossraincloud#2162','crisisangelwolf#1107','Aervid#6679']
+bot_admin_userlist = ['373673675968348160','231234285745602561','127026847878873088','495976836631756802','359132401231986690','312411201969586178','162114687645908992']
 
 
 bumpkin_ID = '550466865248600064'
@@ -299,7 +299,7 @@ async def on_message(message):
     #                print(member)
     
     #admin stuff
-    if str(message.author) in bot_admin_userlist:
+    if str(message.author.id) in bot_admin_userlist:
         #revive bumpkin
         if message.content.startswith('!howdoyouturnthison'):
             await message.channel.send(content='{}'.format(message.author.mention))
