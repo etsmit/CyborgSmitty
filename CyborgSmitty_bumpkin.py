@@ -17,8 +17,6 @@ from datetime import datetime
 
 import threading
 
-import time
-
 from discord.ext import commands, tasks
 
 #=======================================================
@@ -30,11 +28,10 @@ load_dotenv()
 
 TOKEN = os.getenv('DISCORD_TOKEN')
 GUILD = os.getenv('DISCORD_GUILD')
-#bumpkinhealth = int(os.getenv('bumpkin_health'))
+bumpkinhealth = int(os.getenv('bumpkin_health'))
 #print(bumpkinhealth)
 
 print(GUILD)
-print('-----------------------------')
 
 intents = discord.Intents.all()
 
@@ -51,17 +48,16 @@ bot_admin_userlist = ['SpectralSmitty#4102','TheTowerKnight#6883','Spooky Shoryu
 
 cursed_userlist = ['SpectralSmitty#4102','TheTowerKnight#6883','Spooky Shoryu#8161','Yuzzie#9469','Crossraincloud#2162','Viz#8325','ViciousMuse#9205','Xanxus85#3888','bumpkinbatchboi#7429','TwoFacePessimist#4020']
 
-
-attacs_chan_id = 818478301588619334
+bumpkin_ID = '550466865248600064'
+bumpkin_AC = 2
 
 
 
 #sched = Scheduler
 #sched.start()
 
-tgt_health_max=500
-tgt_health=tgt_health_max
-tgt_AC = 2
+bumpkin_max=42069#400
+bumpkinhealth=0#bumpkin_max
 
 #xanxus85 can attac 10 times a day
 xanxus = 0
@@ -73,15 +69,15 @@ xanxus = 0
 help_msg="""
 Command : Function
 
-attac : attack the target 
+attac : attack bumpkin 
 !raidstatus : status update
 !hello : hello world
 !CyborgHalp : this help message
 ==Admin commands==
-!howdoyouturnthison : Revive target, clear people to attac again
-!newhealth : set target's max health (default 500)
-!newAC : set target's AC (default 2)
-!kill : kill target
+!howdoyouturnthison : Revive bumpkin, clear people to attac again
+!bumphealth : set bumpkin's max health (default 400)
+!bumpAC : set bumpkin's AC (default 2)
+!bumpkill : kill bumpkin
 !clearattacs : clear all peeps to attac again
 """
 
@@ -130,16 +126,29 @@ def pingbumpkin():
     print('not done')
     
     
-
-
-#pick a new random target from cursed_userlist        
-def new_tgt():
-    global cursed_userlist
-    length = len(cursed_userlist)
-    ri = np.random.randint(0, high=length)
-    tgt = cursed_userlist[ri]
-    print('New target: '+tgt)
-    return tgt
+#daily reset
+def daily_reset():
+    global attacked_userlist
+    global bumpkinhealth
+    global bumpkin_user
+    global bumpkinmax
+    for server in client.guilds:
+        guild = server
+        if str(server)=="Boletarian Chamber of Commerce":
+            break
+    norights_role = discord.utils.get(guild.roles,name="No Rights")
+    somerights_role = discord.utils.get(guild.roles,name="Bumpkin, the Raid Boss")
+    #norights_role = discord.utils.get(guild.roles,name="Clone")
+    threading.Timer(3600,checkTime).start()
+    now = datetime.now()
+    current_time = now.strftime("%H:%M:%S")
+    if (current_time[:2] == '00'):
+        attacked_userlist=[]
+        if (bumpkinhealth == 0):
+            bumpkin_user.add_roles(somerights_role)
+            bumpkinhealth=bumpkin_max
+            bumpkin_user.remove_roles(norights_role)
+        #os.environ['bumpkin_health'] = str(bumpkinhealth)
     
     
 
@@ -150,88 +159,78 @@ def new_tgt():
 
 
 
-            
+@tasks.loop(hours=24)
+async def daily_reset():
+    global attacked_userlist
+    global bumpkinhealth
+    global bumpkin_user
+    global bumpkinmax
+    for server in client.guilds:
+        guild = server
+        if str(server)=="Boletarian Chamber of Commerce":
+            break
+    norights_role = discord.utils.get(guild.roles,name="No Rights")
+    somerights_role = discord.utils.get(guild.roles,name="Bumpkin, the Raid Boss")
+    #norights_role = discord.utils.get(guild.roles,name="Clone")
 
-#@daily_reset.before_loop
-#async def before():
+    attacked_userlist=[]
+    print('attac list cleared')
+    if (bumpkinhealth == 0):
+        bumpkin_user.add_roles(somerights_role)
+        bumpkinhealth=bumpkin_max
+        bumpkin_user.remove_roles(norights_role)
+    print('bumpkin alive again')
+            
+            
+@daily_reset.before_loop
+async def before():
     #hrs_til_midnight = 13
     #await asyncio.sleep(3600*hrs_til_midnight)
-    #await client.wait_until_ready()
+    await client.wait_until_ready()
 
 
 
 
 @client.event
 async def on_ready():
-    global cursed_userlist
-    global tgt_member
-    global tgt_name
-    global attacs_chan_id
+    global bumpkin_ID
+    global bumpkin_user
+    print(bumpkin_ID)
     now = datetime.now()
     current_time = now.strftime("%H:%M:%S")
     print(current_time)
     #print('{} has connected to Discord!'.format(client.user))
     print('We have logged in as {0.user}'.format(client))
-    tgt_name = new_tgt()
     for server in client.guilds:
         if str(server)=="Boletarian Chamber of Commerce":
             for member in server.members:
-                if str(member) == tgt_name:
-                    tgt_member = member
-                    print('target found!')
-                    print(tgt_member)
-                    print(tgt_member.id)
+                if str(member) == 'bumpkinbatchboi#7429':
+                    bumpkin_user = member
+                    print('bumpkin found!')
+                    print(bumpkin_user)
+                    print(bumpkin_user.id)
                     break
-    attacs_chan = client.get_channel(attacs_chan_id)
-    out_msg = 'I am awaken. The current target is: '+tgt_name
-    await attacs_chan.send(out_msg)
 
+    
+    
 
-@tasks.loop(hours=24)
-async def daily_reset():
-    global attacked_userlist
-    global tgt_health
-    global tgt_member
-    global tgt_health_max
-    global tgt_name
-    if daily_reset.current_loop != 0:
-        for server in client.guilds:
-            if str(server)=="Boletarian Chamber of Commerce":
-                tower_guild = server
-                break
-        norights_role = discord.utils.get(tower_guild.roles,name="No Rights")
-        #norights_role = discord.utils.get(message.guild.roles,name="No Rights")
-        #somerights_role = discord.utils.get(guild.roles,name="Bumpkin, the Raid Boss")
-        #norights_role = discord.utils.get(guild.roles,name="Clone")
-
-        attacked_userlist=[]
-        print('daily: attac list cleared')
-        if (tgt_health == 0):
-            #tgt_member.add_roles(somerights_role)
-            tgt_health=tgt_health_max
-            tgt_member.remove_roles(norights_role)
-        tgt_name = new_tgt()
-        attacs_chan = client.get_channel(attacs_chan_id)
-        out_msg = 'I have reset. The new current target is: '+tgt_name
-        await attacs_chan.send(out_msg)
-   
-daily_reset.start()
         
 @client.event
 async def on_message(message):
-    global tgt_health
-    global tgt_name
+    global bumpkinhealth
     global attacked_userlist
     global bot_admin_userlist
-    global tgt_member
-    global tgt_health_max
-    global tgt_AC
+    global bumpkin_user
+    global bumpkin_max
+    global bumpkin_AC
     global help_msg
     global xanxus
+    global voted_userlist
+    global votes
     #norights_role = discord.utils.get(message.guild.roles,name="Clone")
     norights_role = discord.utils.get(message.guild.roles,name="No Rights")
-    #somerights_role = discord.utils.get(message.guild.roles,name="Bumpkin, the Raid Boss")
-    #fatministers_role = discord.utils.get(message.guild.roles,name="Fat Ministers")
+    somerights_role = discord.utils.get(message.guild.roles,name="Bumpkin, the Raid Boss")
+    fatministers_role = discord.utils.get(message.guild.roles,name="Fat Ministers")
     
     if message.author == client.user:
         return
@@ -239,7 +238,7 @@ async def on_message(message):
     #general stuff    
     #attac    
     if message.content.startswith('attac'):
-        if (message.author.name not in attacked_userlist) and (message.author.name != tgt_name[:-5]):
+        if message.author.name not in attacked_userlist:
             atk = np.random.randint(1,high=21)
             if message.author.name=='Xanxus85':
                 if xanxus == 9:
@@ -253,50 +252,50 @@ async def on_message(message):
             #    if atk > 18:
                     
             
-            if atk<tgt_AC:
-                out_msg = "{} \n**Attack Roll:** {}\nYou Missed!".format(message.author.mention,atk)#bumpkin_user.mention
+            if atk<bumpkin_AC:
+                out_msg = "{} (where bumpkin?)\n**Attack Roll:** {}\nYou Missed!".format(message.author.mention,atk)#bumpkin_user.mention
                 await message.channel.send(content=out_msg)
             else:
                 if atk==20:
                     dmg = dmg_roll_crit()
                 else:
                     dmg = dmg_roll()
-                #if message.author.name == tgt_name[:-5]:
-                #    print('extra dmg for bumpkin')
-                #    bumpkindmg = dmg_roll_bump()
-                #    dmg += bumpkindmg
-                #if message.author.name == 'Xanxus85':
-                #    print('extra dmg for xanxus')
-                #    xancrit = dmg_roll_crit()
-                #    dmg += xancrit                   
+                if message.author.name == 'bumpkinbatchboi':
+                    print('extra dmg for bumpkin')
+                    bumpkindmg = dmg_roll_bump()
+                    dmg += bumpkindmg
+                if message.author.name == 'Xanxus85':
+                    print('extra dmg for xanxus')
+                    xancrit = dmg_roll_crit()
+                    dmg += xancrit                   
                 if (np.random.randint(1,high=2001)==1):
                     print('super roll')
                     dmg += dmg_roll_super()
                     
-                tgt_health -= dmg
+                bumpkinhealth -= dmg
         
-                if (tgt_health <= 0):
-                    tgt_health = 0
-                    #os.environ['bumpkin_health'] = str(bumpkinhealth)
-                    out_msg = "{} \n**Attack Roll:** {}\nYou hit for {} damage and killed {}!".format(message.author.mention,atk,dmg,tgt_name[:-5])
+                if (bumpkinhealth <= 0):
+                    bumpkinhealth = 0
+                    os.environ['bumpkin_health'] = str(bumpkinhealth)
+                    out_msg = "{} (where bumpkin?)\n**Attack Roll:** {}\nYou hit for {} damage and killed bumpkin!".format(message.author.mention,atk,dmg)
                     await message.channel.send(content=out_msg)
-                    await tgt_member.add_roles(norights_role)
-                    #await bumpkin_user.remove_roles(somerights_role)
+                    await bumpkin_user.add_roles(norights_role)
+                    await bumpkin_user.remove_roles(somerights_role)
                 
                 else:
-                    #os.environ['bumpkin_health'] = str(bumpkinhealth)
-                    out_msg = "{} \n**Attack Roll:** {}\nYou hit for {} damage, {} has {}/{} hp left!".format(message.author.mention,atk,dmg,tgt_name[:-5],tgt_health,tgt_health_max)
+                    os.environ['bumpkin_health'] = str(bumpkinhealth)
+                    out_msg = "{} (where bumkpin?)\n**Attack Roll:** {}\nYou hit for {} damage, bumpkin has {}/{} hp left!".format(message.author.mention,atk,dmg,bumpkinhealth,bumpkin_max)
                     await message.channel.send(content=out_msg)
-                    print('{} attacked by {} for {}dmg and now has {}hp left'.format(tgt_name[:-5],message.author,dmg,tgt_health))
+                    print('bumpkin attacked by {} for {}dmg and now has {}hp left'.format(message.author,dmg,bumpkinhealth))
         else:
-            await message.channel.send(content="{} \nYou already rolled today!".format(message.author.mention))
+            await message.channel.send(content="{} (where bumpkin?)\nYou already rolled today!".format(message.author.mention))
     #hello            
     if message.content.startswith('!hello'):
         await message.channel.send(content='Hello!')
     
     #status update    
     if message.content.startswith('!raidstatus'):
-        out_text = "target health: {}/{}\nYou need to roll a {} or higher to hit\nPeople who have attac'd: ".format(tgt_health,tgt_health_max,tgt_AC)
+        out_text = "bumpkin health: {}/{}\nYou need to roll a {} or higher to hit\nPeople who have attac'd: ".format(bumpkinhealth,bumpkin_max,bumpkin_AC)
         for name in attacked_userlist:
             out_text = out_text + name + ', '
         out_text = out_text[:-2]
@@ -316,6 +315,21 @@ async def on_message(message):
     #            for member in server.members:
     #                print(member)
     
+    #voting
+    if message.content.startswith('!vote'):
+        if message.author.name not in voted_userlist:
+            vote = message.content[6:]
+            votes.append(vote)
+            this_auth = str(message.author.name)
+            voted_userlist.append(this_auth)
+            await message.delete()
+            print('VOTES: {}'.format(votes))
+            print('Already voted: {}'.format(voted_userlist))
+            await message.channel.send(content='Vote for "{}" counted!'.format(this_auth))
+
+        else:
+            await message.delete()
+            await message.channel.send(content='You already voted dweeb')
 
     
     #admin stuff
@@ -324,43 +338,43 @@ async def on_message(message):
         if message.content.startswith('!howdoyouturnthison'):
             await message.channel.send(content='{}'.format(message.author.mention))
             attacked_userlist=[]
-            tgt_health=tgt_health_max
+            bumpkinhealth=bumpkin_max
             xanxus=0
             #await client.remove_roles(bumpkin_user,norights_role)
-            #await tgt_member.add_roles(somerights_role)
-            await tgt_member.remove_roles(norights_role)
+            await bumpkin_user.add_roles(somerights_role)
+            await bumpkin_user.remove_roles(norights_role)
             #os.environ['bumpkin_health'] = str(bumpkinhealth)
-            await message.channel.send(content='target hp has been reset to max, daily reset forced')
-            print('target hp has been reset to max, daily reset forced')
+            await message.channel.send(content='bumpkin hp has been reset to max, daily reset forced')
+            print('bumpkin hp has been reset to max, daily reset forced')
 
         #kill bumpkin
-        if message.content.startswith('!kill'):
+        if message.content.startswith('!bumpkill'):
             #await client.add_roles(bumpkin_user,norights_role)
-            tgt_health=0
-            await tgt_member.add_roles(norights_role)
-            #await bumpkin_user.remove_roles(somerights_role)
-            await message.channel.send(content='a bot admin killed the target')
-            print('a bot admin killed the target')
+            bumpkinhealth=0
+            await bumpkin_user.add_roles(norights_role)
+            await bumpkin_user.remove_roles(somerights_role)
+            await message.channel.send(content='a bot admin killed bumpkin')
+            print('a bot admin killed bumpkin')
         
         #set max health    
-        if message.content.startswith('!newhealth'):
+        if message.content.startswith('!bumphealth'):
             #await client.add_roles(bumpkin_user,norights_role)
             try:
-                tgt_health_max = int(message.content[11:])
-                tgt_health = tgt_health_max
-                await message.channel.send(content="target's max health now {}".format(tgt_health_max))
-                print("target's max health now {}".format(tgt_health_max))
+                bumpkin_max = int(message.content[12:])
+                bumpkinhealth = bumpkin_max
+                await message.channel.send(content="bumpkin's max health now {}".format(bumpkin_max))
+                print("bumpkin's max health now {}".format(bumpkin_max))
             except:
                 await message.channel.send(content="try putting in an actual integer, dingus")
                 
                 
-        if message.content.startswith('!newAC'):
+        if message.content.startswith('!bumpAC'):
             #await client.add_roles(bumpkin_user,norights_role)
             try:
-                tgt_AC = int(message.content[7:])
+                bumpkin_AC = int(message.content[8:])
                 #bumpkin_AC = bumpkin_max
-                await message.channel.send(content="target AC now {}".format(tgt_AC))
-                print("target AC now {}".format(tgt_AC))
+                await message.channel.send(content="bumpkin's AC now {}".format(bumpkin_AC))
+                print("bumpkin's AC now {}".format(bumpkin_AC))
             except:
                 await message.channel.send(content="try putting in an actual integer, dingus")
                 
