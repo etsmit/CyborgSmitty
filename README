@@ -1,6 +1,6 @@
 CyborgSmitty:
 
-A python discord bot written to DnD-style bully a certain member of a certain server.
+A python discord bot written to DnD-style raid attack a certain member of a certain server.
 Written by etsmit
 
 Req's:
@@ -8,20 +8,32 @@ Python 3.7.9
 discord.py 1.6.0
 
 
-Users can type !attac to roll a d20. If the roll beats or matches the target's AC, a damage roll of 4d6+10 is done.
-If the target reaches 0 health, the bot switches out discord roles and forbids the target from sending messages.
+Users can type attac to roll a d20. If the roll beats or matches the target's AC, a damage roll is done.
+If the target reaches 0 health, the bot changes their discord nickname for a day to reflect this.
 ==========================
+
 
 Command : Function
 
-attac : attack bumpkin 
-!raidstatus : status update
-!hello : hello world
-!CyborgHalp : this help message
-==Admin commands==
-!howdoyouturnthison : Revive bumpkin, clear people to attac again
-!bumphealth : set bumpkin's max health (default 400)
-!bumpAC : set bumpkin's AC (default 2)
-!bumpkill : kill bumpkin
-!clearattacs : clear all peeps to attac again
+Each player has two actions and can:
+    attac     : same attac as usual
+    weaken    : lower the boss AC by 1d6 (down to minimum of 2)
+    defend    : protect your teammates! 50% chance for the boss to miss their attac!
+    buff      : add an extra 1d10 to the rest of the attacs for the day!
+    resurrect : (takes 2 actions) resurrect the dead teammate! They come back with 3 actions, +5 to attac roll, and 1d10 damage buff!
 
+Other commands:
+    !raidstatus : status update
+    !hello      : hello world
+    !CyborgHalp : this help message
+
+Admin commands:
+    !howdoyouturnthison : Revive target, clear people to attac again
+    !newhealth          : set target's max health (default 500)
+    !newAC              : set target's AC (default 2)
+    !kill               : kill target
+    !clearattacs        : clear all peeps to attac again
+
+For the cursed target:
+    The target can attac one player ONCE and instakill them!
+    Use your target's full discord username with the numbers, for example "attac bumpkinbatchboi#7429"
