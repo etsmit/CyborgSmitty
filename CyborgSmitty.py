@@ -1,6 +1,6 @@
 #discord bot
 
-
+#evanpy / python3
 
 #from funcs import *
 
@@ -18,12 +18,19 @@ from datetime import datetime
 import threading
 
 import time
+from datetime import datetime
+import pause
 
 from discord.ext import commands, tasks
 
 #=======================================================
 #inits
 #=======================================================
+#after restarting bot, wait until 4:20pm to log in
+print('waiting til 4:20')
+pause.until(datetime(2021,11,7,16,20))
+print('done waiting! logging in now...')
+
 
 
 load_dotenv()
@@ -47,25 +54,28 @@ voted_userlist=[]
 votes = []
 
 #this needs to be replaced to be me and anyone with 'Fat Minister' role
-bot_admin_userlist = ['SpectralSmitty#4102','TheTowerKnight#6883','Spooky Shoryu#8161','Yuzzie#9469','a_gamer_in_pink#1312','Crossraincloud#2162','crisisangelwolf#1107','Aervid#6679']
+bot_admin_userlist = ['SpectralSmitty#4102','TheTowerKnight#6883','Spooky Shoryu#8161','Yuzzie#9469','a_gamer_in_pink#1312','crossraincloud#1633','crisisangelwolf#1107','Aervid#6679']
 
-cursed_userlist = ['SpectralSmitty#4102','TheTowerKnight#6883','Spooky Shoryu#8161','Yuzzie#9469','Crossraincloud#2162','Viz#8325','ViciousMuse#9205','Xanxus85#3888','bumpkinbatchboi#7429','TwoFacePessimist#4020']
+cursed_userlist = ['SpectralSmitty#4102','TheTowerKnight#6883','Spooky Shoryu#8161','Yuzzie#9469','crossraincloud#1633','Viz#8325','ViciousMuse#9205','Xanxus85#3888','bumpkinbatchboi#7429','TwoFacePessimist#4020','RyVador#2565']
 
 
 attacs_chan_id = 818478301588619334
 
-
+#daily damage required to kill (determined by past data - typically 7 ppl attac and avg dmg roll is 24)
+kill_threshold = 180
 
 #sched = Scheduler
 #sched.start()
 
-tgt_health_max=500
+tgt_health_max=kill_threshold
 tgt_health=tgt_health_max
 tgt_AC = 2
 
 #xanxus85 can attac 10 times a day
 xanxus = 0
 
+#cloud gets the attac 4x
+cloud = 2
     
 
 
@@ -92,18 +102,19 @@ attac : attack the target
 #=======================================================
 
 
-#roll 4d6+10 damage
+#roll 4d6+10 damage (14 - 34),avg 24
+#roll 4d10 damage (4 - 40),avg 22
 def dmg_roll():
     out = 0
     for i in range(4):
-        out += np.random.randint(1,high=7)
-    return out+10
+        out += np.random.randint(1,high=11)
+    return out
     
 def dmg_roll_crit():
     out = 0
     for i in range(8):
-        out += np.random.randint(1,high=7)
-    return out+10
+        out += np.random.randint(1,high=11)
+    return out
     
 def dmg_roll_bump():
     out=0
@@ -134,10 +145,15 @@ def pingbumpkin():
 
 #pick a new random target from cursed_userlist        
 def new_tgt():
+    global cloud
     global cursed_userlist
     length = len(cursed_userlist)
-    ri = np.random.randint(0, high=length)
-    tgt = cursed_userlist[ri]
+    if cloud != 0:
+        tgt = 'crossraincloud#1633'
+        cloud -= 1
+    else:
+        ri = np.random.randint(0, high=length)
+        tgt = cursed_userlist[ri]
     print('New target: '+tgt)
     return tgt
     
@@ -167,6 +183,7 @@ async def on_ready():
     global tgt_member
     global tgt_name
     global attacs_chan_id
+    global tgt_nick
     now = datetime.now()
     current_time = now.strftime("%H:%M:%S")
     print(current_time)
@@ -181,9 +198,11 @@ async def on_ready():
                     print('target found!')
                     print(tgt_member)
                     print(tgt_member.id)
+                    tgt_nick = tgt_member.display_name
+                    print(tgt_nick)
                     break
     attacs_chan = client.get_channel(attacs_chan_id)
-    out_msg = 'I am awaken. The current target is: '+tgt_name
+    out_msg = 'I am awakened. The current target is: '+tgt_name
     await attacs_chan.send(out_msg)
 
 
@@ -194,6 +213,7 @@ async def daily_reset():
     global tgt_member
     global tgt_health_max
     global tgt_name
+    global tgt_nick
     if daily_reset.current_loop != 0:
         for server in client.guilds:
             if str(server)=="Boletarian Chamber of Commerce":
@@ -207,10 +227,25 @@ async def daily_reset():
         attacked_userlist=[]
         print('daily: attac list cleared')
         if (tgt_health == 0):
-            #tgt_member.add_roles(somerights_role)
-            tgt_health=tgt_health_max
-            tgt_member.remove_roles(norights_role)
+            try:
+                #tgt_member.add_roles(somerights_role)
+                await tgt_member.remove_roles(norights_role)
+                await tgt_member.edit(nick = tgt_nick)
+            except:
+                print('couldnt change nickname')
         tgt_name = new_tgt()
+        for server in client.guilds:
+            if str(server)=="Boletarian Chamber of Commerce":
+                for member in server.members:
+                    if str(member) == tgt_name:
+                        tgt_member = member
+                        print('target found!')
+                        print(tgt_member)
+                        print(tgt_member.id)
+                        break
+        tgt_nick = tgt_member.display_name
+        print(tgt_nick)
+        tgt_health=tgt_health_max
         attacs_chan = client.get_channel(attacs_chan_id)
         out_msg = 'I have reset. The new current target is: '+tgt_name
         await attacs_chan.send(out_msg)
@@ -226,6 +261,7 @@ async def on_message(message):
     global tgt_member
     global tgt_health_max
     global tgt_AC
+    global tgt_nick
     global help_msg
     global xanxus
     #norights_role = discord.utils.get(message.guild.roles,name="Clone")
@@ -239,6 +275,7 @@ async def on_message(message):
     #general stuff    
     #attac    
     if message.content.startswith('attac'):
+        print(tgt_nick)
         if (message.author.name not in attacked_userlist) and (message.author.name != tgt_name[:-5]):
             atk = np.random.randint(1,high=21)
             if message.author.name=='Xanxus85':
@@ -280,7 +317,13 @@ async def on_message(message):
                     #os.environ['bumpkin_health'] = str(bumpkinhealth)
                     out_msg = "{} \n**Attack Roll:** {}\nYou hit for {} damage and killed {}!".format(message.author.mention,atk,dmg,tgt_name[:-5])
                     await message.channel.send(content=out_msg)
-                    await tgt_member.add_roles(norights_role)
+                    try:
+                        await tgt_member.add_roles(norights_role)
+                        await tgt_member.edit(nick = 'This motherfucker has died')
+                    except:
+                        print('couldnt change nickname')
+                    print(tgt_member)
+                    print('{} attacked by {} for {}dmg and now has {}hp left'.format(tgt_name[:-5],message.author,dmg,tgt_health))
                     #await bumpkin_user.remove_roles(somerights_role)
                 
                 else:
@@ -289,7 +332,10 @@ async def on_message(message):
                     await message.channel.send(content=out_msg)
                     print('{} attacked by {} for {}dmg and now has {}hp left'.format(tgt_name[:-5],message.author,dmg,tgt_health))
         else:
-            await message.channel.send(content="{} \nYou already rolled today!".format(message.author.mention))
+            if str(message.author) == str(tgt_member):
+                await message.channel.send(content="{} \nYou can't attac yourself!".format(message.author.mention))
+            else:
+                await message.channel.send(content="{} \nYou already rolled today!".format(message.author.mention))
     #hello            
     if message.content.startswith('!hello'):
         await message.channel.send(content='Hello!')
@@ -328,7 +374,12 @@ async def on_message(message):
             xanxus=0
             #await client.remove_roles(bumpkin_user,norights_role)
             #await tgt_member.add_roles(somerights_role)
-            await tgt_member.remove_roles(norights_role)
+            try:
+                await tgt_member.remove_roles(norights_role)
+                await tgt_member.edit(nick = tgt_nick)
+            except:
+                print('cant')
+            daily_reset()
             #os.environ['bumpkin_health'] = str(bumpkinhealth)
             await message.channel.send(content='target hp has been reset to max, daily reset forced')
             print('target hp has been reset to max, daily reset forced')
@@ -337,7 +388,11 @@ async def on_message(message):
         if message.content.startswith('!kill'):
             #await client.add_roles(bumpkin_user,norights_role)
             tgt_health=0
-            await tgt_member.add_roles(norights_role)
+            try:
+                await tgt_member.add_roles(norights_role)
+                await tgt_member.edit(nick = 'This motherfucker has died')
+            except:
+                print('cant')
             #await bumpkin_user.remove_roles(somerights_role)
             await message.channel.send(content='a bot admin killed the target')
             print('a bot admin killed the target')
