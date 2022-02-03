@@ -28,7 +28,7 @@ from discord.ext import commands, tasks
 #=======================================================
 #after restarting bot, wait until 4:20pm to log in
 print('waiting til 4:20')
-pause.until(datetime(2022,2,1,16,20))
+pause.until(datetime(2022,2,3,16,20))
 print('done waiting! logging in now...')
 
 
@@ -54,14 +54,15 @@ attacked_usertwice=[]
 #this needs to be replaced to be me and anyone with 'Fat Minister' role
 bot_admin_userlist = ['SpectralSmitty#4102','TheTowerKnight#6883','Spooky Shoryu#8161','Yuzzie#9469','a_gamer_in_pink#1312','crossraincloud#1633','crisisangelwolf#1107','Aervid#6679']
 
-cursed_userlist = ['SpectralSmitty#4102','TheTowerKnight#6883','Spooky Shoryu#8161','Yuzzie#9469','crossraincloud#1633','Viz#8325','ViciousMuse#9205','Xanxus85#3888','bumpkinbatchboi#7429','TwoFacePessimist#4020','RyVador#2565']
+#list of potential targets
+cursed_userlist = ['SpectralSmitty#4102','TheTowerKnight#6883','Spooky Shoryu#8161','Yuzzie#9469','crossraincloud#1633','Viz#8325','ViciousMuse#9205','Xanxus85#3888','bumpkinbatchboi#7429','TwoFacePessimist#4020','RyVador#2565','Potato.#4940']
 
-
+#discord channel
 attacs_chan_id = 818478301588619334
 
 #daily damage required to kill (determined by past data - typically 7 ppl attac and avg dmg roll is 24)
 tgt_maxhealth = 400
-tgt_health=tgt_healthmax
+tgt_health=tgt_maxhealth
 
 
 #need to roll tgt_AC or higher on the attack to hit
@@ -70,8 +71,8 @@ tgt_AC = 8
 #xanxus85 can attac X times a day
 xanxus = 0
 
-#cloud gets the attac X times
-cloud = 0
+#player specified in new_tgt() gets targeted X times when bot restarts
+cloud = 3
     
 
 #buffs to player damage (num of extra d10s)
@@ -80,6 +81,7 @@ boss_attac_buff=0
 #50% chance for boss to miss?
 #true if true
 boss_weak = False
+bossfight=True
 
 
 #amount of times resurrected player has attacked
@@ -167,21 +169,15 @@ def new_tgt():
     global cloud
     global cursed_userlist
     global bossfight
-    bossfight = False
+    bossfight = True
     length = len(cursed_userlist)
     if cloud != 0:
-        tgt = 'crossraincloud#1633'
+        tgt = 'bumpkinbatchboi#7429'
         cloud -= 1
     else:
         ri = np.random.randint(0, high=length)
         tgt = cursed_userlist[ri]
-    if boss_countdown == 0:
-        boss_countdown = 0#np.random.randint(1,high=8)
-        bossfight = True
-        print('Boss fight! '+tgt)
-    else:
-        boss_countdown -= 1
-        print('New target: '+tgt)
+    print('New target: '+tgt)
     return tgt
     
     
@@ -283,13 +279,8 @@ async def on_ready():
                     print(tgt_nick)
                     break
     attacs_chan = client.get_channel(attacs_chan_id)
-    if bossfight:
-        print ('bossfight')
-        out_msg = """The target is {}\n Type !CyborgHalp for the rules!!""" .format(tgt_name)
-        tgt_health=boss_maxhealth
-    else:
-        tgt_health=tgt_health_max
-        out_msg = 'I am awakened. The current target is: '+tgt_name
+    tgt_health=tgt_maxhealth
+    out_msg = 'I am awakened. The current target is: '+tgt_name
     await attacs_chan.send(out_msg)
     
     
@@ -369,10 +360,9 @@ async def daily_reset():
                         break
         tgt_nick = tgt_member.display_name
         print(tgt_nick)
-        tgt_health=tgt_health_max
+        tgt_health=tgt_maxhealth
         attacs_chan = client.get_channel(attacs_chan_id)
         out_msg = """I have reset.\n The target is {}!""" .format(tgt_name)
-        tgt_health= tgt_max_health
         await attacs_chan.send(out_msg)
    
 daily_reset.start()
@@ -393,8 +383,6 @@ async def on_message(message):
     global help_msg
     global xanxus
     global bossfight
-    global boss_AC
-    global boss_maxhealth
     global boss_attac_buff
     global boss_weak
     global res_player_attacs
@@ -406,7 +394,6 @@ async def on_message(message):
     
     if message.author == client.user:
         return
-
 
     if action_check(message):
         if bossfight:
@@ -478,7 +465,7 @@ async def on_message(message):
                         crit = True
                     if (message.author.name == boss_target):
                         atk += 5
-                    if (atk < boss_AC):
+                    if (atk < tgt_AC):
                         out_msg = "{} \n**Attack Roll:** {}\nYou Missed!".format(message.author.mention,atk)#bumpkin_user.mention
                         await message.channel.send(content=out_msg)
                     else:
@@ -509,7 +496,7 @@ async def on_message(message):
                             print('{} attacked by {} for {}dmg and now has {}hp left'.format(tgt_name[:-5],message.author,dmg,tgt_health))
                 
                         else:
-                            out_msg = "{} \n**Attack Roll:** {}\nYou hit for {} damage, {} has {}/{} hp left!".format(message.author.mention,atk,dmg,tgt_name[:-5],tgt_health,boss_maxhealth)
+                            out_msg = "{} \n**Attack Roll:** {}\nYou hit for {} damage, {} has {}/{} hp left!".format(message.author.mention,atk,dmg,tgt_name[:-5],tgt_health,tgt_maxhealth)
                             await message.channel.send(content=out_msg)
                             print('{} attacked by {} for {}dmg and now has {}hp left'.format(tgt_name[:-5],message.author,dmg,tgt_health))
                     count_player_action(message)
@@ -542,14 +529,14 @@ async def on_message(message):
                 #weaken boss AC
                 elif message.content.startswith('weaken'):
                     if (boss_AC == 2):
-                        out_msg = "{} \n Boss AC is already 2!".format(message.author.mention,boss_AC)
+                        out_msg = "{} \n Boss AC is already 2!".format(message.author.mention,tgt_AC)
                         await message.channel.send(content=out_msg)
                         return
-                    boss_AC -= np.random.randint(1,high=7)
-                    if boss_AC < 2:
-                        boss_AC = 2
-                    print('boss AC set to {}'.format(boss_AC))
-                    out_msg = "{} \n You lowered the boss AC to {}!".format(message.author.mention,boss_AC)
+                    tgt_AC -= np.random.randint(1,high=7)
+                    if tgt_AC < 2:
+                        tgt_AC = 2
+                    print('boss AC set to {}'.format(tgt_AC))
+                    out_msg = "{} \n You lowered the boss AC to {}!".format(message.author.mention,tgt_AC)
                     await message.channel.send(content=out_msg)
                     count_player_action(message)
                 
